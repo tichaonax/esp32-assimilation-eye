@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "Gamma.h"
+
 namespace selftest {
 
 namespace {
@@ -15,9 +17,7 @@ void fade(LedDriver& leds, float from, float to) {
   const uint32_t ticks = FADE_MS / FADE_TICK_MS;
   for (uint32_t t = 0; t <= ticks; t++) {
     const float x = static_cast<float>(t) / ticks;
-    // Squared, so the fade looks even to the eye until gamma correction arrives in Phase 3.
-    const float level = from + (to - from) * x;
-    leds.setAll(level * level);
+    leds.setAll(eye::gamma::correct(from + (to - from) * x));
     delay(FADE_TICK_MS);
   }
 }
@@ -26,7 +26,7 @@ void fade(LedDriver& leds, float from, float to) {
 void run(LedDriver& leds) {
   leds.off();
   for (size_t i = 0; i < hw::RING_LED_COUNT; i++) {
-    leds.set(i, STEP_LEVEL);
+    leds.set(i, eye::gamma::correct(STEP_LEVEL));
     delay(STEP_MS);
     leds.set(i, 0.0f);
   }
