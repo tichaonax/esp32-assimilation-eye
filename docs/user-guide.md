@@ -1,6 +1,6 @@
 # Assimilation Eye — User Guide
 
-How to power, connect to, configure and troubleshoot the prop. Nothing here needs a PC or any programming: a phone is enough.
+How to power, connect to, configure and troubleshoot the prop. A phone is enough for everything except changing the built-in LED defaults (section 4.7), which needs the PC with the project on it.
 
 - To build the circuit, see [hardware-guide.md](hardware-guide.md).
 - To build or change the firmware, see [README.md](../README.md).
@@ -167,6 +167,52 @@ The small blue LED on the board itself. It is separate from the ring. A board wi
 ### 4.6 Reset LED settings
 
 At the bottom of the screen. Tap once, then tap again to confirm. It restores every setting on this screen to the defaults this firmware was built with. Sign-in and Wi-Fi are not touched.
+
+### 4.7 Making your settings the defaults (`led-defaults.json`)
+
+The defaults are the settings a new or factory-reset prop starts with, and the ones **Reset LED settings** returns to. They are fixed when the firmware is built, from a file called `led-defaults.json` in the project folder. Changing them is the one job in this guide that needs the PC with the project on it.
+
+The file covers everything on the Eye screen: whether the ring is running, the pattern, overall brightness, and every comet, flash, combined-pattern and onboard LED setting. Sign-in and Wi-Fi details are not part of it.
+
+**Step 1. Tune the prop.** On the Eye screen, set everything the way you want a fresh prop to behave, including which pattern is selected.
+
+**Step 2. Capture the settings.** On the PC, open PowerShell in the project folder and run the command below with the prop's address: `192.168.4.1` if the PC is on the prop's own network, or the address from the Wi-Fi screen.
+
+```powershell
+python scripts\save_led_defaults.py --device 192.168.4.1
+```
+
+It asks for the sign-in password, writes `led-defaults.json` and lists each setting that changed. To look without writing anything, add `--show`. If the user name is not `admin`, add `--user NAME`.
+
+**Step 3. Build and upload the firmware.**
+
+```powershell
+& "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run -t upload
+```
+
+Near the top of the output, this line confirms the file was used:
+
+```
+led_defaults: CUSTOM LED DEFAULTS - 22 settings from led-defaults.json
+```
+
+**Step 4. Check.** On the Eye screen tap **Reset LED settings**. The prop goes to the settings you captured. The System screen shows **LED defaults: Set for this build**.
+
+The upload by itself does not change what the ring is doing, because the prop keeps the settings it already had stored. The reset in step 4 is what shows the new defaults.
+
+**Editing the file by hand.** It is plain text and can be opened in any editor. For example, to change only the starting pattern, edit the `pattern` line and repeat steps 3 and 4:
+
+| `"pattern"` value | Starts on |
+|---|---|
+| `"comet"` | Rotating comet |
+| `"flash"` | Synchronized flash |
+| `"blend"` | Comet and flash |
+
+Any setting may be left out of the file; it then keeps its built-in value. A misspelt setting or a value out of range stops the build with a message naming it, for example `comet.tailLength is 12; it must be from 0 to 7`. Nothing is uploaded until the file is corrected.
+
+**Going back to the built-in defaults.** Delete `led-defaults.json`, then build and upload again.
+
+**Keeping the file.** Commit `led-defaults.json` with the rest of the project so every later build uses it.
 
 ---
 
