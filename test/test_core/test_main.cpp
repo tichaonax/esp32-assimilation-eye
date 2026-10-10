@@ -22,6 +22,7 @@ static int runAllTests() {
   runAnimatorTests();
   runOnboardTests();
   runJsonTests();
+  runRulesTests();
   return UNITY_END();
 }
 

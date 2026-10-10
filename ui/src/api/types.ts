@@ -75,3 +75,82 @@ export const LIMITS = {
   onboardBlinkCount: { min: 1, max: 5 },
   onboardBlinkMs: { min: 50, max: 500 },
 } as const;
+
+// ---- Sign-in ------------------------------------------------------------------
+
+export type Session =
+  | { authenticated: false }
+  | { authenticated: true; username: string; defaultPassword: boolean };
+
+// ---- Wi-Fi --------------------------------------------------------------------
+
+export type StationStatus = 'notConfigured' | 'connecting' | 'connected' | 'failed';
+export type Addressing = 'dhcp' | 'static';
+
+export interface StaticAddress {
+  ip: string;
+  mask: string;
+  gateway: string;
+  dns1: string;
+  dns2: string;
+}
+
+export interface StationReport extends StaticAddress {
+  configured: boolean;
+  /** The network came from a development build, not from this screen. */
+  fromBuild: boolean;
+  ssid: string;
+  status: StationStatus;
+  /** Why joining failed, in plain words; empty if there is nothing to say. */
+  problem: string;
+  addressing: Addressing;
+  rssi?: number;
+  channel?: number;
+  /** What was last typed in for static addressing. */
+  static: StaticAddress;
+}
+
+export interface AccessPointReport {
+  ssid: string;
+  ip: string;
+  clients: number;
+  defaultPassword: boolean;
+}
+
+export interface WifiReport {
+  station: StationReport;
+  accessPoint: AccessPointReport;
+  hostname: string;
+  mac: string;
+}
+
+export interface NetworkFound {
+  ssid: string;
+  rssi: number;
+  secure: boolean;
+  channel: number;
+}
+
+export interface ScanReport {
+  scanning: boolean;
+  networks: NetworkFound[];
+}
+
+export interface JoinRequest extends Partial<StaticAddress> {
+  ssid: string;
+  /** Left out to keep the password already saved for this network. */
+  password?: string;
+  addressing: Addressing;
+}
+
+// ---- System -------------------------------------------------------------------
+
+export interface SystemInfo {
+  firmware: { version: string; built: string; developmentBuild: boolean };
+  chip: { model: string; revision: string; cores: number; mac: string };
+  uptimeS: number;
+  resetReason: string;
+  memory: { freeBytes: number; lowestFreeBytes: number };
+  flash: { sizeBytes: number; firmwareBytes: number; slotBytes: number };
+  animation: { frames: number; tickMs: number; worstGapMs: number };
+}

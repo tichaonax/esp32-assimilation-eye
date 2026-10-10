@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { getState } from './client';
+import { confirmStillSignedIn, getState } from './client';
 import { applyPatch, mergePatches } from './merge';
 import type { ClientMessage, EyeState, ServerMessage, SettingsPatch } from './types';
 
@@ -181,6 +181,12 @@ export function useEye(): Eye {
         }
         socketRef.current = null;
         setStatus(everLive ? 'reconnecting' : 'connecting');
+        // The board refuses the connection, and closes open ones, when the
+        // session has ended (signed out elsewhere, details changed, restart).
+        // A browser cannot see why a WebSocket closed, so ask.
+        confirmStillSignedIn().catch(() => {
+          // No answer: the link is down, and the retry below deals with that.
+        });
         retryTimer = window.setTimeout(connect, retryMs);
         retryMs = Math.min(retryMs * 2, RETRY_MAX_MS);
       };

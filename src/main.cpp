@@ -1,48 +1,44 @@
 // Assimilation Eye — firmware entry point.
 //
-// Phase 4: LED ring and onboard LED, power-on self-test, animation with the
-// saved settings, the prop's own Wi-Fi access point and the settings API.
-// While BRINGUP_PROBE is defined, the BOOT button (or the letter n on the
-// serial console) switches pattern, since there is no interface yet.
+// Brings up the LED ring and onboard LED, runs the power-on self-test, starts
+// the animation with the saved settings, then Wi-Fi, sign-in and the web
+// server. While BRINGUP_PROBE is defined, a short press of the BOOT button (or
+// the letter n on the serial console) switches pattern and the console gets a
+// periodic health line.
 
 #include <Arduino.h>
 
 #include "AnimationTask.h"
+#include "Auth.h"
+#include "BuildInfo.h"
 #include "ConfigStore.h"
+#include "FactoryReset.h"
 #include "HardwareConfig.h"
 #include "LedDriver.h"
 #include "OnboardLed.h"
+#include "OtaUpdate.h"
 #include "SelfTest.h"
+#include "SystemControl.h"
 #include "WebApi.h"
 #include "WifiManager.h"
-
-#ifndef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "dev"
-#endif
 
 static LedDriver leds;
 static OnboardLed onboardLed;
 static AnimationTask animation(leds, onboardLed);
 static ConfigStore store(animation);
+static Auth auth;
 static WifiManager wifi;
-static WebApi api(animation, store, onboardLed);
+static OtaUpdate ota(animation);
+static FactoryReset factoryReset(animation, store, auth, wifi);
+static WebApi api(animation, store, onboardLed, auth, wifi, ota, factoryReset);
 
 #ifdef BRINGUP_PROBE
 namespace probe {
 
-constexpr uint32_t DEBOUNCE_MS = 40;
 constexpr uint32_t REPORT_MS = 30000;
 
-bool buttonStable = false;
-bool buttonLast = false;
-uint32_t buttonChangedMs = 0;
 uint32_t lastReportMs = 0;
 uint32_t lastReportFrames = 0;
-
-bool buttonPressed() {
-  const bool low = digitalRead(hw::BOOT_BUTTON_PIN) == LOW;
-  return hw::BOOT_BUTTON_ACTIVE_LOW ? low : !low;
-}
 
 // Moves to the next registered pattern, through the same path the API uses.
 void nextPattern() {
@@ -64,25 +60,13 @@ void nextPattern() {
 }
 
 void begin() {
-  pinMode(hw::BOOT_BUTTON_PIN, INPUT_PULLUP);
-  Serial.println(F("[probe] Press the BOOT button, or send n, to switch pattern."));
+  Serial.println(F("[probe] Press the BOOT button briefly, or send n, to switch pattern."));
   lastReportMs = millis();
   lastReportFrames = animation.frameCount();
 }
 
 void loop() {
   const uint32_t now = millis();
-
-  const bool raw = buttonPressed();
-  if (raw != buttonLast) {
-    buttonLast = raw;
-    buttonChangedMs = now;
-  } else if (raw != buttonStable && now - buttonChangedMs >= DEBOUNCE_MS) {
-    buttonStable = raw;
-    if (buttonStable) {
-      nextPattern();
-    }
-  }
 
   while (Serial.available() > 0) {
     const int c = Serial.read();
@@ -109,13 +93,14 @@ void setup() {
   delay(300);
   Serial.println();
   Serial.println(F("=== Assimilation Eye ==="));
-  Serial.printf("Firmware %s, built %s %s\n", FIRMWARE_VERSION, __DATE__, __TIME__);
+  Serial.printf("Firmware %s, built %s%s\n", buildinfo::version(), buildinfo::builtAt(),
+                buildinfo::developmentBuild() ? " — DEVELOPMENT BUILD, do not distribute" : "");
   // Core 3.x reports the revision as major * 100 + minor.
-  Serial.printf("Chip %s rev %u.%u, %u core(s), flash %u MB\n", ESP.getChipModel(), ESP.getChipRevision() / 100,
-                ESP.getChipRevision() % 100, ESP.getChipCores(),
-                static_cast<unsigned>(ESP.getFlashChipSize() / (1024 * 1024)));
-  Serial.printf("Sketch %u bytes, free slot space %u bytes\n", static_cast<unsigned>(ESP.getSketchSize()),
-                static_cast<unsigned>(ESP.getFreeSketchSpace()));
+  Serial.printf("Chip %s rev %u.%u, %u core(s), flash %u MB. Last start: %s.\n", ESP.getChipModel(),
+                ESP.getChipRevision() / 100, ESP.getChipRevision() % 100, ESP.getChipCores(),
+                static_cast<unsigned>(ESP.getFlashChipSize() / (1024 * 1024)), systemcontrol::resetReason());
+  Serial.printf("Firmware %u bytes of a %u-byte slot\n", static_cast<unsigned>(ESP.getSketchSize()),
+                static_cast<unsigned>(OtaUpdate::slotBytes()));
 
   const bool ringOk = leds.begin();
   Serial.printf("LED ring: %u outputs at %u Hz, %u-bit — %s\n", static_cast<unsigned>(hw::RING_LED_COUNT),
@@ -138,6 +123,8 @@ void setup() {
                 static_cast<unsigned>(animation.patterns().count()), static_cast<unsigned>(AnimationTask::TICK_MS),
                 animation.config().pattern, animationOk ? "running" : "FAILED to start");
 
+  auth.begin();
+  factoryReset.begin();
   wifi.begin();
   api.begin();
 
@@ -150,8 +137,24 @@ void loop() {
   wifi.loop();
   api.loop();
   store.loop();
+
+  const FactoryReset::Event event = factoryReset.loop();
 #ifdef BRINGUP_PROBE
+  if (event == FactoryReset::Event::ShortPress) {
+    probe::nextPattern();
+  }
   probe::loop();
+#else
+  (void)event;
 #endif
+
+  if (systemcontrol::restartDue()) {
+    // Anything changed in the last moments is written before the lights go out.
+    store.saveNow();
+    Serial.println(F("[system] Restarting."));
+    Serial.flush();
+    ESP.restart();
+  }
+
   delay(5);
 }

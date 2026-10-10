@@ -1,13 +1,22 @@
 #include "AnimationTask.h"
 
+#include <math.h>
+
+#include "Gamma.h"
 #include "HardwareConfig.h"
 
 static_assert(eye::LED_COUNT == hw::RING_LED_COUNT, "pattern code and pin map disagree on the LED count");
 
 namespace {
 constexpr uint32_t STACK_BYTES = 4096;
-constexpr UBaseType_t PRIORITY = 2;  // above loop() (1), below the Wi-Fi stack
-constexpr BaseType_t CORE = 1;       // the Wi-Fi stack lives on core 0
+// Above the web server's task (10), so a slow request such as checking a
+// password cannot hold up a frame; below the Wi-Fi stack (23). A frame takes
+// well under a millisecond, so this starves nothing.
+constexpr UBaseType_t PRIORITY = 18;
+constexpr BaseType_t CORE = 1;  // the Wi-Fi stack lives on core 0
+
+constexpr uint32_t UPDATING_PERIOD_MS = 1600;
+constexpr uint32_t ARMING_PERIOD_MS = 250;
 }  // namespace
 
 AnimationTask::AnimationTask(LedDriver& leds, OnboardLed& onboard)
@@ -50,8 +59,38 @@ bool AnimationTask::apply(eye::EyeConfig config) {
   return true;
 }
 
+uint32_t AnimationTask::takeWorstGapMs() {
+  const uint32_t worst = _worstGapMs;
+  _worstGapMs = 0;
+  return worst;
+}
+
 void AnimationTask::taskEntry(void* self) {
   static_cast<AnimationTask*>(self)->run();
+}
+
+void AnimationTask::drawIndicator(Indicator indicator, uint32_t elapsedMs, float frame[eye::LED_COUNT]) {
+  _indicatorMs += elapsedMs;
+  float level = 0.0f;
+  switch (indicator) {
+    case Indicator::Updating: {
+      const float phase = static_cast<float>(_indicatorMs % UPDATING_PERIOD_MS) / UPDATING_PERIOD_MS;
+      level = 0.15f + 0.45f * (0.5f - 0.5f * cosf(phase * 2.0f * static_cast<float>(M_PI)));
+      break;
+    }
+    case Indicator::ResetArming:
+      level = (_indicatorMs % ARMING_PERIOD_MS) < ARMING_PERIOD_MS / 2 ? 0.7f : 0.0f;
+      break;
+    case Indicator::ResetConfirmed:
+      level = 0.9f;
+      break;
+    case Indicator::None:
+      break;
+  }
+  const float duty = eye::gamma::correct(level);
+  for (size_t i = 0; i < eye::LED_COUNT; i++) {
+    frame[i] = duty;
+  }
 }
 
 void AnimationTask::run() {
@@ -82,8 +121,20 @@ void AnimationTask::run() {
     const uint32_t now = millis();
     const uint32_t elapsed = now - lastMs;
     lastMs = now;
+    if (elapsed > _worstGapMs) {
+      _worstGapMs = elapsed;
+    }
 
-    _animator.render(elapsed, frame);
+    const Indicator indicator = _indicator;
+    if (indicator == Indicator::None) {
+      _indicatorMs = 0;
+      _animator.render(elapsed, frame);
+    } else {
+      // The pattern is paused, not advanced, so it resumes where it was.
+      _animator.render(0, frame);
+      drawIndicator(indicator, elapsed, frame);
+    }
+
     for (size_t i = 0; i < eye::LED_COUNT; i++) {
       _leds.set(i, frame[i]);
     }

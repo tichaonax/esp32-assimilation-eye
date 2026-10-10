@@ -9,3 +9,4 @@ void runFlashTests();
 void runAnimatorTests();
 void runOnboardTests();
 void runJsonTests();
+void runRulesTests();
