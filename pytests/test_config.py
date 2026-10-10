@@ -98,7 +98,7 @@ def test_several_groups_in_one_request(device):
         {
             "pattern": "flash",
             "brightness": 40,
-            "flash": {"intervalMs": 500, "durationMs": 100},
+            "flash": {"intervalMs": 500, "durationMs": 100, "rampUpMs": 0, "rampDownMs": 0},
             "onboard": {"mode": "off"},
         }
     )

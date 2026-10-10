@@ -2,10 +2,8 @@
 
 How to build the eight-LED ring circuit on a breadboard, for either supported ESP32 board.
 
-- For using and configuring the finished prop, see `docs/user-guide.md` (written in Phase 7).
-- For building the firmware, see `README.md` (written in Phase 7).
-
-> **Status:** Sections 1–8 are complete. Sections 9–11 are placeholders that are filled in once the firmware exists.
+- For using and configuring the finished prop, and for troubleshooting, see [user-guide.md](user-guide.md).
+- For building and uploading the firmware, see [README.md](../README.md).
 
 ---
 
@@ -334,35 +332,172 @@ Work with the USB cable **unplugged** until step 9.
 | 2 | `GND` is second from the USB end, next to `3V3` | `GND` is the first pin at the antenna end; a second `GND` sits between `IO21` and `IO19` |
 | 7 | Labels `D23` … `D4`, with `TX2` and `RX2` for LEDs 6 and 7 | Labels `IO23` … `IO4`, with `IO17` and `IO16` for LEDs 6 and 7 |
 | 7 | Gaps: `TX0`, `RX0`, `D5` | Gaps: `TXD0`, `RXD0`, the middle `GND`, `IO5` |
-| 9 | Blue onboard LED (GPIO 2) blinks when the firmware drives it; confirmed on the board in hand | No controllable onboard LED on the genuine board |
+| 9 | Blue onboard LED (GPIO 2) lights when the firmware drives it; confirmed on the board in hand | No controllable onboard LED on the genuine board |
 
 ---
 
 ## 9. Initial testing with the firmware
 
-*To be completed in Phase 7.* Will cover the power-on self-test, in which the firmware lights LEDs 1 to 8 in order so wiring order can be checked at a glance, and what a correct start-up looks like on the serial console.
+The firmware must be on the board first. [README.md](../README.md) covers building and uploading it.
 
-Until then, the short version: on power-up the current firmware lights LED 1 to LED 8 in turn, fades the whole ring up and down once, then repeats a slow chase of one LED every 0.6 seconds while the blue onboard LED toggles. An LED that stays dark is reversed or missing its ground wire. LEDs lighting out of order means two signal wires are swapped.
+### 9.1 The power-on self-test
 
-Steps 9 and 10 of section 8 confirm power and polarity without any firmware.
+Every time the board is powered or restarted, before anything else:
+
+1. LED 1 lights for a fifth of a second, then LED 2, and so on to LED 8.
+2. The whole ring fades up and back down once.
+3. The ring starts its pattern.
+
+Watch it two or three times; unplug and replug to repeat it.
+
+| What you see | Meaning |
+|---|---|
+| Eight LEDs, one at a time, in order 1 to 8 | The wiring is correct |
+| A gap where an LED should light | That LED is reversed, or a wire or resistor on it is loose |
+| The right LEDs in the wrong order | Two signal wires are swapped. Compare with section 7 |
+| Two LEDs light at the same step | Their wires or legs are touching |
+| All correct, but one is dimmer in the fade | Wrong resistor value on that LED |
+| Nothing lights, red power light on | The ground wire is missing, or BOOT was held while powering on |
+
+### 9.2 What the serial console shows
+
+Optional, with the board on a PC. Open the console as described in the README. A healthy start looks like this, with your own version, addresses and times:
+
+```
+=== Assimilation Eye ===
+Firmware 0.8.0, built 2026-10-10 17:44
+Chip ESP32-D0WD-V3 rev 3.1, 2 core(s), flash 4 MB. Last start: power on.
+Firmware 1192272 bytes of a 1966080-byte slot
+LED ring: 8 outputs at 5000 Hz, 12-bit — ready
+Onboard LED: ready
+Self-test: LED 1 -> LED 8, then fade.
+Self-test done.
+Settings: restored from flash
+LED defaults: from this build's led-defaults.json
+Animation: 3 patterns, 5 ms tick, pattern "blend" — running
+[auth] Sign-in user "admin", DEFAULT PASSWORD still in use. A password check takes 227 ms.
+[wifi] Access point "AssimilationEye" is up. Interface address: http://192.168.4.1
+[wifi] No network saved. Use the Wi-Fi screen to join one.
+[api] Listening on port 80.
+```
+
+A line containing `FAILED` names the part that did not start.
+
+### 9.3 Checking each LED from the browser
+
+1. Connect and sign in (user guide, section 3).
+2. On the Eye screen choose **Synchronized flash**, set **Minimum brightness** and **Maximum brightness** to 100% and **Overall brightness** to 100%. All eight LEDs are now fully and steadily on. Compare their brightness.
+3. Choose **Rotating comet**, set **Tail length** to 0 and **Speed** to its slowest. A single LED travels round. Confirm it visits every position in order.
+4. Tap **Reset LED settings** to put everything back.
+
+### 9.4 Before moving on
+
+- [ ] The self-test is correct three times in a row
+- [ ] All eight LEDs are equally bright in step 2 above
+- [ ] The board is not warm to the touch after five minutes at full brightness
+- [ ] The prop runs for 15 minutes from the power bank you will use, without cutting out
 
 ---
 
 ## 10. Troubleshooting
 
-*To be completed in Phase 7.* Hardware troubleshooting will live in `docs/user-guide.md` alongside the software troubleshooting, laid out as symptom, likely cause and fix. This section will link to it.
+Hardware and software troubleshooting are together in the user guide, laid out as symptom, likely cause and fix:
 
-Quick checks available now:
+- [User guide, section 10.2 — Hardware](user-guide.md#102-hardware): dark, dim, flickering or out-of-order LEDs, a board that will not power or is not detected, a power bank that cuts out.
+- [User guide, section 10.1 — Connecting, signing in and updating](user-guide.md#101-connecting-signing-in-and-updating).
 
-| Symptom | Check |
-|---|---|
-| One LED never lights in the polarity check | LED reversed; cathode wire missing; resistor leg not seated |
-| No LED lights in the polarity check | Ground wire from `GND` to the `−` strip missing; `−` strip split in the middle of the breadboard |
-| Board's power LED is off | Cable is charge-only or faulty; try another cable or port |
-| Board gets warm or the PC reports a USB fault | Unplug at once. Look for a short between `3V3` and `GND`, or bare legs touching |
+Checks that need no firmware are steps 9 and 10 of section 8.
 
 ---
 
 ## 11. Transferring to the wearable
 
-*To be completed in Phase 7.* Will cover arranging the LEDs around the lens in the order in section 6.3, soldering and insulating joints, strain relief, mounting the board and power bank on the cap, keeping the BOOT button clear, and an accessible way to switch the prop off.
+Do this only after section 9.4 is complete on the breadboard. A fault is far easier to find there than on a cap.
+
+### 11.1 Extra parts
+
+| Part | Notes |
+|---|---|
+| Thin stranded wire, about 26–30 AWG, ideally in several colours | Solid breadboard wire breaks when flexed. Nine conductors are needed; ribbon cable works well |
+| Heat-shrink tubing, 1.5–2 mm | To insulate every joint. Electrical tape comes loose with warmth |
+| Soldering iron and solder | |
+| A ring to hold the LEDs | Stiff card, craft foam or thin plastic, cut to fit around the lens, with eight holes |
+| Hot glue or epoxy | To fix LEDs and relieve strain on wires |
+| Small cable ties, Velcro or fabric tape | To route wires and mount the board and power bank |
+| Short USB cable, and an inline USB switch | The cable from the power bank to the board, with the off switch in it |
+
+### 11.2 Plan the layout
+
+- **LED order.** Mark eight evenly spaced positions around the lens. LED 1 is at the top; numbering runs clockwise **as the audience sees it**, as in section 6.3. Working from behind the glasses, that is counter-clockwise. Write the numbers on the back of the ring before fitting anything.
+- **Which lens.** Either. The firmware does not care.
+- **Board.** On the side or back of the cap, where the USB socket is reachable and the **BOOT button is not pressed by anything**. A pressed BOOT button at power-on stops the board starting, and held for ten seconds it erases the settings.
+- **Power bank.** In a pocket, or at the back of the cap as a counterweight.
+- **Wires.** Along the arm of the glasses and up to the cap. Leave slack where the glasses meet the cap so they can be put on and taken off.
+- **Vision.** Nothing in front of the lens. Keep the ring on the frame, and point the LEDs outward, away from the eye.
+
+### 11.3 Build the ring
+
+1. Push the eight LEDs through the holes from the front, all turned the same way, so that every **short leg (cathode)** points to the same side, for example toward the centre.
+2. Fix each LED with a small dab of glue at the back.
+3. **Common ground.** Bend each short leg over to reach its neighbour and solder them into a ring, or run one bare wire around and solder each short leg to it. Solder one wire to this ring: this is the ground wire.
+4. **Resistors.** Trim each long leg to about 5 mm and solder a 220 Ω resistor to it. Slide heat-shrink over the joint and the resistor body.
+5. **Signal wires.** Solder one wire to the free end of each resistor. Use a different colour for each, or label both ends 1 to 8 with tape.
+6. Insulate everything. No bare metal on one LED's signal side may be able to touch the ground ring or another LED's signal.
+
+The resistors can instead go at the board end of the wires if there is no room at the ring. The circuit is the same.
+
+Solder quickly: more than about three seconds of heat on a leg can damage an LED. Hold the leg with pliers between the joint and the LED to draw heat away.
+
+### 11.4 Connect to the board
+
+Solder the wires to the board's pins, or use female jumper leads pushed onto the pins and secured with a spot of glue.
+
+| Wire | Board label, DEVKIT V1 | Board label, DevKitC 38-pin |
+|---|---|---|
+| LED 1 | `D23` | `IO23` |
+| LED 2 | `D22` | `IO22` |
+| LED 3 | `D21` | `IO21` |
+| LED 4 | `D19` | `IO19` |
+| LED 5 | `D18` | `IO18` |
+| LED 6 | `TX2` | `IO17` |
+| LED 7 | `RX2` | `IO16` |
+| LED 8 | `D4` | `IO4` |
+| Ground | `GND` | `GND` |
+
+If two wires end up swapped, they can be corrected without soldering: reorder the pin list `RING_LED_PINS` in `include/HardwareConfig.h` and rebuild the firmware. If the whole ring runs backwards, simply choose the other direction in the browser.
+
+### 11.5 Test before mounting
+
+Power the board and watch the self-test with the ring lying on the table. Check the order against the numbers written on the back, **looking from the front**. Fix any fault now.
+
+Then flex every wire gently near its joints while the ring is fully on (section 9.3, step 2). An LED that flickers has a weak joint.
+
+### 11.6 Mount
+
+1. Fix the ring to the frame around the lens.
+2. Run the wires along the arm. Tie them down every few centimetres.
+3. **Strain relief.** Fix each wire bundle to something solid within a centimetre or two of its joints, at the ring and at the board, so that movement bends the wire and not the solder.
+4. Mount the board on a non-conductive surface. Cover its underside with tape or put it in a small case: the pins are bare metal, and sweat, foil or a metal cap fitting can short them.
+5. Mount the power bank and connect it through the inline switch.
+
+### 11.7 Switching the prop off
+
+The firmware has no off button, by design: the prop is switched off by removing power.
+
+- **Inline USB switch** between the power bank and the board, placed where your hand finds it without looking. This is the recommended way.
+- Or unplug the USB cable.
+- A power bank's own button usually cannot switch the output off.
+
+After changing a setting, wait two seconds before switching off so the change is stored. Switching off at any other time is harmless.
+
+To darken the ring while keeping the prop powered and reachable, use **Stop the ring** in the browser.
+
+### 11.8 Final check on the wearable
+
+- [ ] Self-test correct with the prop being worn
+- [ ] No flicker when the head turns, nods, or the glasses are taken off and put on
+- [ ] Nothing presses the BOOT button
+- [ ] Nothing obstructs vision; no LED shines into the eye
+- [ ] The off switch can be reached while wearing it
+- [ ] Runs 15 minutes on the power bank, worn, without cutting out and without anything getting warm
+- [ ] The user guide's [pre-demo checklist](user-guide.md#9-pre-demo-checklist) is done

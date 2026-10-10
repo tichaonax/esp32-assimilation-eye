@@ -1,6 +1,6 @@
 {
   "running": true,
-  "pattern": "flash",
+  "pattern": "blend",
   "brightness": 84,
   "comet": {
     "direction": "clockwise",
