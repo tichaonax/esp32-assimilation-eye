@@ -1,0 +1,350 @@
+/* Assimilation Eye — phone-first, dark only: it is used in dim rooms and on stage. */
+
+:root {
+  --bg: #07090a;
+  --surface: #101416;
+  --surface-raised: #171d20;
+  --line: #263035;
+  --text: #e6ecee;
+  --text-dim: #93a1a8;
+  --accent: #ff2d2d; /* the LEDs are red */
+  --accent-dim: #7d1b1b;
+  --ok: #3ddc84;
+  --warn: #ffb020;
+
+  --radius: 14px;
+  --gap: 16px;
+  --touch: 48px;
+
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  overscroll-behavior-y: none;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.app {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
+}
+
+/* ---- Header ---------------------------------------------------------------- */
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand h1 {
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.lens {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: radial-gradient(circle, var(--accent) 0 34%, transparent 38%);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.pill .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.pill.live {
+  color: var(--text);
+}
+
+.pill.live .dot {
+  background: var(--ok);
+}
+
+/* ---- Banners --------------------------------------------------------------- */
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: var(--gap);
+  padding: 12px 14px;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  background: #2a2008;
+  font-size: 0.92rem;
+}
+
+.banner.error {
+  border-color: var(--accent);
+  background: #2a0c0c;
+}
+
+.placeholder {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+/* ---- Cards ----------------------------------------------------------------- */
+
+.card {
+  margin-bottom: var(--gap);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card h2 {
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.tag {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.tag.on {
+  color: var(--ok);
+}
+
+/* ---- Fields ---------------------------------------------------------------- */
+
+.field {
+  margin-top: 18px;
+}
+
+.field:first-child {
+  margin-top: 0;
+}
+
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+}
+
+.field-head output {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.hint {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+/* ---- Slider ---------------------------------------------------------------- */
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: var(--touch); /* tall hit area; the visible track is drawn inside it */
+  margin: 0;
+  background: transparent;
+  touch-action: pan-y; /* a sideways drag moves the slider, a vertical one scrolls */
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--accent) var(--fill), var(--line) var(--fill));
+}
+
+input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+input[type='range']::-moz-range-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -10px;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  background: var(--text);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  background: var(--text);
+}
+
+input[type='range']:disabled {
+  opacity: 0.45;
+}
+
+/* ---- Buttons --------------------------------------------------------------- */
+
+button {
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button {
+  min-height: var(--touch);
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-raised);
+  cursor: pointer;
+}
+
+.button:disabled,
+.segmented button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.button.power {
+  display: block;
+  width: 100%;
+  font-weight: 600;
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.button.power.on {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-dim);
+}
+
+.button.quiet {
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.button.danger {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.button.small {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  flex: none;
+}
+
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+}
+
+.segmented.two-columns {
+  grid-auto-flow: row;
+  grid-template-columns: 1fr 1fr;
+}
+
+.segmented button {
+  min-height: var(--touch);
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-raised);
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.segmented button[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}

@@ -67,10 +67,39 @@ def test_wrong_method_is_refused(device):
     assert device.post("/api/state").status_code in (404, 405)
 
 
-def test_root_page_is_served(device):
+def test_interface_page_is_served_compressed(device):
     response = device.get("/")
     assert response.status_code == 200
-    assert "Assimilation Eye" in response.text
+    assert response.headers["Content-Type"].startswith("text/html")
+    assert response.headers["Content-Encoding"] == "gzip"
+    # requests has already decompressed it.
+    assert "<title>Assimilation Eye</title>" in response.text
+    assert 'id="root"' in response.text
+
+
+def test_interface_page_is_one_self_contained_file(device):
+    page = device.get("/").text
+    assert "/assets/" not in page, "the page must not need any other file from the board"
+    assert '<script type="module">' in page
+    assert "<style>" in page
+
+
+def test_interface_page_is_revalidated_not_refetched(device):
+    first = device.get("/")
+    etag = first.headers["ETag"]
+    assert first.headers["Cache-Control"] == "no-cache"
+
+    again = device.http.get(device.base + "/", headers={"If-None-Match": etag}, timeout=5)
+    assert again.status_code == 304
+    assert again.content == b""
+    assert again.headers["ETag"] == etag
+
+    changed = device.http.get(device.base + "/", headers={"If-None-Match": '"something-else"'}, timeout=5)
+    assert changed.status_code == 200
+
+
+def test_index_html_is_the_same_page(device):
+    assert device.get("/index.html").text == device.get("/").text
 
 
 def test_state_answers_promptly_while_the_animation_runs(device):

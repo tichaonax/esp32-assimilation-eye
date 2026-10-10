@@ -1,6 +1,8 @@
-// The device's HTTP and WebSocket API for LED settings.
+// The device's web server: the browser interface and the HTTP and WebSocket
+// API for LED settings.
 //
-//   GET  /api/state    everything: settings, available patterns, onboard LED availability
+//   GET  /             the interface (one compressed page, built from ui/)
+//   GET  /api/state   everything: settings, available patterns, onboard LED availability
 //   POST /api/config   partial settings as JSON; replies with the resulting state
 //   POST /api/reset    back to the default LED settings; replies with the state
 //   WS   /ws           live two-way state (messages below)

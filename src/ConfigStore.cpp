@@ -45,14 +45,26 @@ bool ConfigStore::load(eye::EyeConfig& config) {
 }
 
 void ConfigStore::requestSave() {
-  _requestedAtMs = millis();
+  const uint32_t now = millis();
+  if (!_pending) {
+    _firstRequestAtMs = now;
+  }
+  _requestedAtMs = now;
   _pending = true;
 }
 
 void ConfigStore::loop() {
-  if (!_pending || millis() - _requestedAtMs < SAVE_DELAY_MS) {
+  if (!_pending) {
     return;
   }
+  const uint32_t now = millis();
+  const bool quiet = now - _requestedAtMs >= SAVE_DELAY_MS;
+  // Someone adjusting things non-stop never leaves a quiet moment; save anyway.
+  const bool overdue = now - _firstRequestAtMs >= MAX_UNSAVED_MS;
+  if (!quiet && !overdue) {
+    return;
+  }
+  // Cleared before saving, so a change that arrives meanwhile asks again.
   _pending = false;
   saveNow();
 }

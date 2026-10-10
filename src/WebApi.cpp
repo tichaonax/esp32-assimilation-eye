@@ -4,15 +4,29 @@
 #include <string.h>
 
 #include "ConfigJson.h"
+#include "generated/ui_bundle.h"
 
 namespace {
 constexpr uint32_t SOCKET_CLEANUP_MS = 1000;
 constexpr char JSON_TYPE[] = "application/json";
+constexpr char HTML_TYPE[] = "text/html; charset=utf-8";
 
-constexpr char PLACEHOLDER_PAGE[] =
-    "Assimilation Eye\n\n"
-    "The device API is running. The browser interface arrives in a later firmware version.\n"
-    "Current state: /api/state\n";
+// The interface is one gzip-compressed page built into the firmware. The
+// browser may keep a copy but must check it is still current each time
+// ("no-cache"), so a firmware update is picked up at once; while it is
+// current the check costs a few bytes instead of the whole page.
+void sendInterface(AsyncWebServerRequest* request) {
+  AsyncWebServerResponse* response;
+  if (request->hasHeader("If-None-Match") && request->header("If-None-Match") == UI_BUNDLE_ETAG) {
+    response = request->beginResponse(304);
+  } else {
+    response = request->beginResponse(200, HTML_TYPE, UI_BUNDLE_GZ, UI_BUNDLE_GZ_LEN);
+    response->addHeader("Content-Encoding", "gzip");
+  }
+  response->addHeader("ETag", UI_BUNDLE_ETAG);
+  response->addHeader("Cache-Control", "no-cache");
+  request->send(response);
+}
 
 void sendJson(AsyncWebServerRequest* request, int status, const JsonDocument& doc) {
   AsyncResponseStream* response = request->beginResponseStream(JSON_TYPE);
@@ -38,8 +52,8 @@ void WebApi::begin() {
     sendState(request);
   });
 
-  _server.on("/", HTTP_GET,
-             [](AsyncWebServerRequest* request) { request->send(200, "text/plain; charset=utf-8", PLACEHOLDER_PAGE); });
+  _server.on("/", HTTP_GET, sendInterface);
+  _server.on("/index.html", HTTP_GET, sendInterface);
 
   _socket.onEvent([this](AsyncWebSocket*, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data,
                          size_t len) { handleSocketEvent(client, type, arg, data, len); });
