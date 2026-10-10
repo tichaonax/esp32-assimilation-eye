@@ -183,7 +183,8 @@ def test_upload_from_someone_not_signed_in_writes_nothing(device, anonymous, req
 
 
 def test_restart_brings_the_board_back_with_its_settings(device):
-    device.set({"brightness": 37, "pattern": "flash"})
+    blend = {"cometMs": 4000, "flashMs": 3000, "crossfadeMs": 500, "randomDirection": False}
+    device.set({"brightness": 37, "pattern": "blend", "blend": blend})
     time.sleep(2.5)  # settings are saved two quiet seconds after the last change
 
     response = device.post("/api/restart")
@@ -199,7 +200,8 @@ def test_restart_brings_the_board_back_with_its_settings(device):
     assert info["uptimeS"] < 40
     assert info["resetReason"] == "restart requested"
     state = device.state()
-    assert state["brightness"] == 37 and state["pattern"] == "flash", "LED settings must survive a restart"
+    assert state["brightness"] == 37 and state["pattern"] == "blend", "LED settings must survive a restart"
+    assert state["blend"] == blend, "combined-pattern settings must survive a restart"
     print(f"\n    back {took:.0f} s after the restart request")
 
 

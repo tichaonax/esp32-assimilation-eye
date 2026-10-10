@@ -19,6 +19,7 @@ static int runAllTests() {
   runGammaTests();
   runCometTests();
   runFlashTests();
+  runBlendTests();
   runAnimatorTests();
   runOnboardTests();
   runJsonTests();

@@ -23,6 +23,9 @@ class Pattern {
   // Back to the start of the animation.
   virtual void reset() = 0;
 
+  // Seeds whatever the pattern leaves to chance. Most patterns have nothing.
+  virtual void seed(uint32_t value) { (void)value; }
+
   // Advances the animation by elapsedMs and writes the perceived brightness
   // (0..1) of each LED. Overall brightness and gamma are applied by the caller.
   //

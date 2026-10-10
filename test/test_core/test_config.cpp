@@ -28,6 +28,11 @@ static void test_defaults_match_the_settings_table() {
   TEST_ASSERT_EQUAL_INT32(0, c.flash.rampUpMs);
   TEST_ASSERT_EQUAL_INT32(0, c.flash.rampDownMs);
 
+  TEST_ASSERT_EQUAL_INT32(8000, c.blend.cometMs);
+  TEST_ASSERT_EQUAL_INT32(6000, c.blend.flashMs);
+  TEST_ASSERT_EQUAL_INT32(1500, c.blend.crossfadeMs);
+  TEST_ASSERT_TRUE(c.blend.randomDirection);
+
   TEST_ASSERT_TRUE(c.onboard.mode == eye::OnboardMode::BlinkOnPatternChange);
   TEST_ASSERT_EQUAL_INT32(50, c.onboard.brightness);
   TEST_ASSERT_EQUAL_INT32(2, c.onboard.blinkCount);
@@ -50,6 +55,9 @@ static void test_values_below_range_are_raised() {
   c.flash.durationMs = -10;
   c.flash.rampUpMs = -1;
   c.flash.rampDownMs = -1;
+  c.blend.cometMs = 999;
+  c.blend.flashMs = 0;
+  c.blend.crossfadeMs = -1;
   c.onboard.blinkCount = 0;
   c.onboard.blinkMs = 1;
 
@@ -63,6 +71,9 @@ static void test_values_below_range_are_raised() {
   TEST_ASSERT_EQUAL_INT32(0, c.flash.durationMs);
   TEST_ASSERT_EQUAL_INT32(0, c.flash.rampUpMs);
   TEST_ASSERT_EQUAL_INT32(0, c.flash.rampDownMs);
+  TEST_ASSERT_EQUAL_INT32(1000, c.blend.cometMs);
+  TEST_ASSERT_EQUAL_INT32(1000, c.blend.flashMs);
+  TEST_ASSERT_EQUAL_INT32(0, c.blend.crossfadeMs);
   TEST_ASSERT_EQUAL_INT32(1, c.onboard.blinkCount);
   TEST_ASSERT_EQUAL_INT32(50, c.onboard.blinkMs);
 }
@@ -76,6 +87,9 @@ static void test_values_above_range_are_lowered() {
   c.comet.tailFalloff = 100;
   c.flash.intervalMs = 60000;
   c.flash.maxBrightness = 400;
+  c.blend.cometMs = 60001;
+  c.blend.flashMs = 1000000;
+  c.blend.crossfadeMs = 5001;
   c.onboard.brightness = 101;
   c.onboard.blinkCount = 9;
   c.onboard.blinkMs = 5000;
@@ -88,6 +102,9 @@ static void test_values_above_range_are_lowered() {
   TEST_ASSERT_EQUAL_INT32(90, c.comet.tailFalloff);
   TEST_ASSERT_EQUAL_INT32(10000, c.flash.intervalMs);
   TEST_ASSERT_EQUAL_INT32(100, c.flash.maxBrightness);
+  TEST_ASSERT_EQUAL_INT32(60000, c.blend.cometMs);
+  TEST_ASSERT_EQUAL_INT32(60000, c.blend.flashMs);
+  TEST_ASSERT_EQUAL_INT32(5000, c.blend.crossfadeMs);
   TEST_ASSERT_EQUAL_INT32(100, c.onboard.brightness);
   TEST_ASSERT_EQUAL_INT32(5, c.onboard.blinkCount);
   TEST_ASSERT_EQUAL_INT32(500, c.onboard.blinkMs);

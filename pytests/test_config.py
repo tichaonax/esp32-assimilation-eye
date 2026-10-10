@@ -25,7 +25,7 @@ def test_unknown_keys_are_ignored(device, defaults):
     assert result == defaults
 
 
-@pytest.mark.parametrize("pattern", ["flash", "comet"])
+@pytest.mark.parametrize("pattern", ["flash", "blend", "comet"])
 def test_pattern_can_be_selected(device, pattern):
     assert device.set({"pattern": pattern})["pattern"] == pattern
 
@@ -56,6 +56,31 @@ def test_every_flash_setting_can_be_changed(device):
         "rampDownMs": 600,
     }
     assert device.set({"flash": values})["flash"] == values
+
+
+def test_every_combined_pattern_setting_can_be_changed(device):
+    values = {
+        "cometMs": 12000,
+        "flashMs": 3000,
+        "crossfadeMs": 750,
+        "randomDirection": False,
+    }
+    assert device.set({"blend": values})["blend"] == values
+
+
+def test_combined_pattern_leaves_the_comet_and_flash_settings_alone(device, defaults):
+    result = device.set({"pattern": "blend", "blend": {"crossfadeMs": 0}})
+    assert result["pattern"] == "blend"
+    assert result["comet"] == defaults["comet"]
+    assert result["flash"] == defaults["flash"]
+
+
+def test_comet_and_flash_can_be_adjusted_while_combined(device):
+    device.set({"pattern": "blend"})
+    result = device.set({"comet": {"stepIntervalMs": 150}, "flash": {"intervalMs": 700}})
+    assert result["pattern"] == "blend"
+    assert result["comet"]["stepIntervalMs"] == 150
+    assert result["flash"]["intervalMs"] == 700
 
 
 def test_every_onboard_setting_can_be_changed(device):

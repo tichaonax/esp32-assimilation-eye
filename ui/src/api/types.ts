@@ -22,6 +22,14 @@ export interface FlashSettings {
   rampDownMs: number;
 }
 
+/** The combined pattern: comet and flash in turn, crossfading between them. */
+export interface BlendSettings {
+  cometMs: number;
+  flashMs: number;
+  crossfadeMs: number;
+  randomDirection: boolean;
+}
+
 export interface OnboardSettings {
   mode: OnboardMode;
   brightness: number;
@@ -35,6 +43,7 @@ export interface EyeSettings {
   brightness: number;
   comet: CometSettings;
   flash: FlashSettings;
+  blend: BlendSettings;
   onboard: OnboardSettings;
 }
 
@@ -56,6 +65,7 @@ export interface SettingsPatch {
   brightness?: number;
   comet?: Partial<CometSettings>;
   flash?: Partial<FlashSettings>;
+  blend?: Partial<BlendSettings>;
   onboard?: Partial<OnboardSettings>;
 }
 
@@ -72,6 +82,8 @@ export const LIMITS = {
   flashIntervalMs: { min: 100, max: 10000 },
   flashDurationMs: { min: 0, max: 10000 },
   flashRampMs: { min: 0, max: 5000 },
+  blendHoldMs: { min: 1000, max: 60000 },
+  blendCrossfadeMs: { min: 0, max: 5000 },
   onboardBlinkCount: { min: 1, max: 5 },
   onboardBlinkMs: { min: 50, max: 500 },
 } as const;

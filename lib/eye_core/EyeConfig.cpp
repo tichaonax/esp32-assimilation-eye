@@ -68,6 +68,11 @@ EyeConfig defaultConfig() {
   config.flash.rampUpMs = 0;
   config.flash.rampDownMs = 0;
 
+  config.blend.cometMs = 8000;
+  config.blend.flashMs = 6000;
+  config.blend.crossfadeMs = 1500;
+  config.blend.randomDirection = true;
+
   config.onboard.mode = OnboardMode::BlinkOnPatternChange;
   config.onboard.brightness = 50;
   config.onboard.blinkCount = 2;
@@ -102,6 +107,10 @@ bool sanitize(EyeConfig& config) {
     changed = true;
   }
   changed |= sanitizeFlashTiming(config.flash);
+
+  changed |= clampField(config.blend.cometMs, BLEND_HOLD_MS_MIN, BLEND_HOLD_MS_MAX);
+  changed |= clampField(config.blend.flashMs, BLEND_HOLD_MS_MIN, BLEND_HOLD_MS_MAX);
+  changed |= clampField(config.blend.crossfadeMs, BLEND_CROSSFADE_MS_MIN, BLEND_CROSSFADE_MS_MAX);
 
   if (static_cast<uint8_t>(config.onboard.mode) > static_cast<uint8_t>(OnboardMode::BlinkOnPatternChange)) {
     config.onboard.mode = OnboardMode::BlinkOnPatternChange;

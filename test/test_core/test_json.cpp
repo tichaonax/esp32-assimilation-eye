@@ -39,6 +39,10 @@ static void test_json_writes_every_setting() {
   TEST_ASSERT_EQUAL_INT(4, doc["comet"]["tailLength"].as<int>());
   TEST_ASSERT_EQUAL_INT(1000, doc["flash"]["intervalMs"].as<int>());
   TEST_ASSERT_EQUAL_INT(100, doc["flash"]["maxBrightness"].as<int>());
+  TEST_ASSERT_EQUAL_INT(8000, doc["blend"]["cometMs"].as<int>());
+  TEST_ASSERT_EQUAL_INT(6000, doc["blend"]["flashMs"].as<int>());
+  TEST_ASSERT_EQUAL_INT(1500, doc["blend"]["crossfadeMs"].as<int>());
+  TEST_ASSERT_TRUE(doc["blend"]["randomDirection"].as<bool>());
   TEST_ASSERT_EQUAL_STRING("blinkOnPatternChange", doc["onboard"]["mode"].as<const char*>());
   TEST_ASSERT_EQUAL_INT(120, doc["onboard"]["blinkMs"].as<int>());
 }
@@ -72,6 +76,10 @@ static void test_json_round_trip_keeps_every_setting() {
   original.flash.maxBrightness = 95;
   original.flash.rampUpMs = 400;
   original.flash.rampDownMs = 600;
+  original.blend.cometMs = 12000;
+  original.blend.flashMs = 3000;
+  original.blend.crossfadeMs = 750;
+  original.blend.randomDirection = false;
   original.onboard.mode = eye::OnboardMode::Heartbeat;
   original.onboard.brightness = 20;
   original.onboard.blinkCount = 4;
@@ -96,6 +104,43 @@ static void test_json_partial_update_changes_only_what_is_named() {
 
   TEST_ASSERT_TRUE(apply("{}", c, error));
   TEST_ASSERT_EQUAL_STRING(before.c_str(), toText(c).c_str());
+}
+
+static void test_json_settings_saved_before_the_combined_pattern_still_load() {
+  // What firmware 0.6.0 wrote to flash: no "blend" group at all.
+  const char* saved =
+      "{\"running\":true,\"pattern\":\"flash\",\"brightness\":45,"
+      "\"comet\":{\"direction\":\"counterClockwise\",\"stepIntervalMs\":120,\"headBrightness\":90,"
+      "\"tailLength\":3,\"tailFalloff\":40},"
+      "\"flash\":{\"intervalMs\":800,\"durationMs\":100,\"minBrightness\":0,\"maxBrightness\":100,"
+      "\"rampUpMs\":50,\"rampDownMs\":50},"
+      "\"onboard\":{\"mode\":\"heartbeat\",\"brightness\":30,\"blinkCount\":2,\"blinkMs\":120}}";
+  EyeConfig c = eye::defaultConfig();
+  char error[eye::json::ERROR_SIZE];
+  TEST_ASSERT_TRUE(apply(saved, c, error));
+  TEST_ASSERT_EQUAL_STRING("flash", c.pattern);
+  TEST_ASSERT_EQUAL_INT32(120, c.comet.stepIntervalMs);
+  TEST_ASSERT_EQUAL_INT32(8000, c.blend.cometMs);
+  TEST_ASSERT_EQUAL_INT32(6000, c.blend.flashMs);
+  TEST_ASSERT_EQUAL_INT32(1500, c.blend.crossfadeMs);
+  TEST_ASSERT_TRUE(c.blend.randomDirection);
+}
+
+static void test_json_combined_pattern_settings_are_read_and_checked() {
+  EyeConfig c = eye::defaultConfig();
+  char error[eye::json::ERROR_SIZE];
+  TEST_ASSERT_TRUE(apply("{\"blend\":{\"cometMs\":2000,\"randomDirection\":false}}", c, error));
+  TEST_ASSERT_EQUAL_INT32(2000, c.blend.cometMs);
+  TEST_ASSERT_EQUAL_INT32(6000, c.blend.flashMs);
+  TEST_ASSERT_FALSE(c.blend.randomDirection);
+
+  TEST_ASSERT_FALSE(apply("{\"blend\":{\"randomDirection\":1}}", c, error));
+  TEST_ASSERT_EQUAL_STRING("blend.randomDirection must be true or false", error);
+  TEST_ASSERT_FALSE(apply("{\"blend\":{\"crossfadeMs\":\"slow\"}}", c, error));
+  TEST_ASSERT_EQUAL_STRING("blend.crossfadeMs must be a number", error);
+  TEST_ASSERT_FALSE(apply("{\"blend\":5}", c, error));
+  TEST_ASSERT_EQUAL_STRING("blend must be an object", error);
+  TEST_ASSERT_EQUAL_INT32(2000, c.blend.cometMs);
 }
 
 static void test_json_unknown_keys_are_ignored() {
@@ -187,6 +232,8 @@ void runJsonTests() {
   RUN_TEST(test_json_document_does_not_depend_on_the_config_staying_alive);
   RUN_TEST(test_json_round_trip_keeps_every_setting);
   RUN_TEST(test_json_partial_update_changes_only_what_is_named);
+  RUN_TEST(test_json_settings_saved_before_the_combined_pattern_still_load);
+  RUN_TEST(test_json_combined_pattern_settings_are_read_and_checked);
   RUN_TEST(test_json_unknown_keys_are_ignored);
   RUN_TEST(test_json_numbers_are_rounded_and_left_for_sanitize_to_clamp);
   RUN_TEST(test_json_wrong_types_are_rejected_and_nothing_changes);

@@ -24,6 +24,12 @@ def test_state_reports_the_default_settings(device):
         "rampUpMs": 0,
         "rampDownMs": 0,
     }
+    assert state["blend"] == {
+        "cometMs": 8000,
+        "flashMs": 6000,
+        "crossfadeMs": 1500,
+        "randomDirection": True,
+    }
     assert state["onboard"] == {
         "mode": "blinkOnPatternChange",
         "brightness": 50,
@@ -34,8 +40,8 @@ def test_state_reports_the_default_settings(device):
 
 def test_state_lists_the_available_patterns(device):
     patterns = device.state()["patterns"]
-    assert [p["name"] for p in patterns] == ["comet", "flash"]
-    assert all(p["label"] for p in patterns)
+    assert [p["name"] for p in patterns] == ["comet", "flash", "blend"]
+    assert [p["label"] for p in patterns] == ["Rotating comet", "Synchronized flash", "Comet and flash"]
 
 
 def test_state_says_whether_the_onboard_led_is_available(device):
@@ -49,7 +55,15 @@ def test_state_is_json_and_not_cached(device):
 
 
 def test_reset_restores_the_defaults(device, defaults):
-    device.set({"brightness": 5, "pattern": "flash", "comet": {"tailLength": 1}, "onboard": {"mode": "on"}})
+    device.set(
+        {
+            "brightness": 5,
+            "pattern": "blend",
+            "comet": {"tailLength": 1},
+            "blend": {"cometMs": 2000, "randomDirection": False},
+            "onboard": {"mode": "on"},
+        }
+    )
     assert device.state() != defaults
 
     assert device.reset() == defaults

@@ -12,6 +12,11 @@ const DIRECTIONS: readonly SegmentedOption<Direction>[] = [
   { value: 'clockwise', label: 'Clockwise' },
 ];
 
+const RANDOM_DIRECTION: readonly SegmentedOption<'on' | 'off'>[] = [
+  { value: 'on', label: 'Random' },
+  { value: 'off', label: 'As set for the comet' },
+];
+
 const ONBOARD_MODES: readonly SegmentedOption<OnboardMode>[] = [
   { value: 'off', label: 'Off' },
   { value: 'on', label: 'On' },
@@ -40,7 +45,9 @@ export function EyeScreen({ eye }: { eye: Eye }) {
   }
 
   const offline = status !== 'live';
-  const { comet, flash, onboard } = state;
+  const { comet, flash, blend, onboard } = state;
+  const combined = state.pattern === 'blend';
+  const blendCycleMs = blend.cometMs + blend.flashMs + 2 * blend.crossfadeMs;
   const flashBusyMs = flash.rampUpMs + flash.durationMs + flash.rampDownMs;
 
   return (
@@ -76,15 +83,67 @@ export function EyeScreen({ eye }: { eye: Eye }) {
         />
       </Card>
 
-      {state.pattern === 'comet' && (
-        <Card title="Comet">
-          <Segmented
-            label="Direction"
-            value={comet.direction}
-            options={DIRECTIONS}
+      {combined && (
+        <Card title="Comet and flash">
+          <Slider
+            label="Time on comet"
+            value={blend.cometMs}
+            min={LIMITS.blendHoldMs.min}
+            max={LIMITS.blendHoldMs.max}
+            step={500}
+            scale="fine-low"
+            format={duration}
             disabled={offline}
-            onChange={(direction) => set({ comet: { direction } })}
+            onChange={(cometMs) => set({ blend: { cometMs } })}
           />
+          <Slider
+            label="Time on flash"
+            value={blend.flashMs}
+            min={LIMITS.blendHoldMs.min}
+            max={LIMITS.blendHoldMs.max}
+            step={500}
+            scale="fine-low"
+            format={duration}
+            disabled={offline}
+            onChange={(flashMs) => set({ blend: { flashMs } })}
+          />
+          <Slider
+            label="Crossfade"
+            value={blend.crossfadeMs}
+            min={LIMITS.blendCrossfadeMs.min}
+            max={LIMITS.blendCrossfadeMs.max}
+            step={100}
+            format={(ms) => (ms === 0 ? 'Cut' : duration(ms))}
+            hint={`One full round, there and back, takes ${duration(blendCycleMs)}.`}
+            disabled={offline}
+            onChange={(crossfadeMs) => set({ blend: { crossfadeMs } })}
+          />
+          <Segmented
+            label="Comet direction"
+            value={blend.randomDirection ? 'on' : 'off'}
+            options={RANDOM_DIRECTION}
+            disabled={offline}
+            onChange={(choice) => set({ blend: { randomDirection: choice === 'on' } })}
+          />
+          <p className="hint">
+            {blend.randomDirection
+              ? 'The direction is picked afresh each time the comet returns, while the flash hides the change.'
+              : 'The comet always turns the way chosen under Comet below.'}
+          </p>
+        </Card>
+      )}
+
+      {(state.pattern === 'comet' || combined) && (
+        <Card title="Comet">
+          {!(combined && blend.randomDirection) && (
+            <Segmented
+              label="Direction"
+              value={comet.direction}
+              options={DIRECTIONS}
+              disabled={offline}
+              onChange={(direction) => set({ comet: { direction } })}
+            />
+          )}
           <Slider
             label="Speed"
             value={comet.stepIntervalMs}
@@ -129,7 +188,7 @@ export function EyeScreen({ eye }: { eye: Eye }) {
         </Card>
       )}
 
-      {state.pattern === 'flash' && (
+      {(state.pattern === 'flash' || combined) && (
         <Card title="Flash">
           <Slider
             label="Interval"

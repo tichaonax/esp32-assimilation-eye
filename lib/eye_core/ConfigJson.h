@@ -7,6 +7,7 @@
 //                  "tailLength": 4, "tailFalloff": 50 },
 //     "flash":   { "intervalMs": 1000, "durationMs": 200, "minBrightness": 0,
 //                  "maxBrightness": 100, "rampUpMs": 0, "rampDownMs": 0 },
+//     "blend":   { "cometMs": 8000, "flashMs": 6000, "crossfadeMs": 1500, "randomDirection": true },
 //     "onboard": { "mode": "blinkOnPatternChange", "brightness": 50, "blinkCount": 2, "blinkMs": 120 }
 //   }
 //

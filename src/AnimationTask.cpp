@@ -1,5 +1,6 @@
 #include "AnimationTask.h"
 
+#include <esp_random.h>
 #include <math.h>
 
 #include "Gamma.h"
@@ -30,6 +31,8 @@ bool AnimationTask::begin(const eye::EyeConfig& initial) {
   if (_mutex == nullptr) {
     return false;
   }
+  _registry.seed(esp_random());
+
   // No task yet, so the animator can be set up directly.
   if (!_animator.setConfig(initial)) {
     _animator.setConfig(eye::defaultConfig());

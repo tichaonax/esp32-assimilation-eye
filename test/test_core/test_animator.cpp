@@ -33,11 +33,12 @@ class SolidPattern : public eye::Pattern {
 
 static void test_registry_has_the_built_in_patterns() {
   eye::PatternRegistry registry;
-  TEST_ASSERT_EQUAL_UINT(2, registry.count());
+  TEST_ASSERT_EQUAL_UINT(3, registry.count());
   TEST_ASSERT_NOT_NULL(registry.find("comet"));
   TEST_ASSERT_NOT_NULL(registry.find("flash"));
+  TEST_ASSERT_NOT_NULL(registry.find("blend"));
   TEST_ASSERT_EQUAL_STRING("comet", registry.at(0)->name());
-  TEST_ASSERT_NULL(registry.at(2));
+  TEST_ASSERT_NULL(registry.at(3));
 }
 
 static void test_registry_rejects_unknown_and_duplicate_names() {
@@ -49,14 +50,14 @@ static void test_registry_rejects_unknown_and_duplicate_names() {
   eye::CometPattern another;
   TEST_ASSERT_FALSE(registry.add(&another));
   TEST_ASSERT_FALSE(registry.add(nullptr));
-  TEST_ASSERT_EQUAL_UINT(2, registry.count());
+  TEST_ASSERT_EQUAL_UINT(3, registry.count());
 }
 
 static void test_registry_accepts_a_new_pattern() {
   eye::PatternRegistry registry;
   SolidPattern solid;
   TEST_ASSERT_TRUE(registry.add(&solid));
-  TEST_ASSERT_EQUAL_UINT(3, registry.count());
+  TEST_ASSERT_EQUAL_UINT(4, registry.count());
   TEST_ASSERT_TRUE(registry.find("solid") == &solid);
 
   eye::Animator animator(registry);

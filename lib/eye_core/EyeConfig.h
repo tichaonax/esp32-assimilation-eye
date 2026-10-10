@@ -36,6 +36,15 @@ struct FlashSettings {
   int32_t rampDownMs;     // 0 = abrupt
 };
 
+// The combined pattern plays the comet and the flash in turn, as each is set
+// up above, and crossfades between them.
+struct BlendSettings {
+  int32_t cometMs;       // time showing only the comet
+  int32_t flashMs;       // time showing only the flash
+  int32_t crossfadeMs;   // time to fade from one to the other; 0 = cut
+  bool randomDirection;  // pick the comet's direction at random each time it returns
+};
+
 struct OnboardSettings {
   OnboardMode mode;
   int32_t brightness;  // percent
@@ -49,6 +58,7 @@ struct EyeConfig {
   int32_t brightness;  // percent, applied on top of the pattern
   CometSettings comet;
   FlashSettings flash;
+  BlendSettings blend;
   OnboardSettings onboard;
 };
 
@@ -67,6 +77,10 @@ constexpr int32_t FLASH_DURATION_MS_MIN = 0;
 constexpr int32_t FLASH_DURATION_MS_MAX = 10000;
 constexpr int32_t FLASH_RAMP_MS_MIN = 0;
 constexpr int32_t FLASH_RAMP_MS_MAX = 5000;
+constexpr int32_t BLEND_HOLD_MS_MIN = 1000;
+constexpr int32_t BLEND_HOLD_MS_MAX = 60000;
+constexpr int32_t BLEND_CROSSFADE_MS_MIN = 0;
+constexpr int32_t BLEND_CROSSFADE_MS_MAX = 5000;
 constexpr int32_t ONBOARD_BLINK_COUNT_MIN = 1;
 constexpr int32_t ONBOARD_BLINK_COUNT_MAX = 5;
 constexpr int32_t ONBOARD_BLINK_MS_MIN = 50;

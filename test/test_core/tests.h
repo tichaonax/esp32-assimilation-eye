@@ -6,6 +6,7 @@ void runConfigTests();
 void runGammaTests();
 void runCometTests();
 void runFlashTests();
+void runBlendTests();
 void runAnimatorTests();
 void runOnboardTests();
 void runJsonTests();

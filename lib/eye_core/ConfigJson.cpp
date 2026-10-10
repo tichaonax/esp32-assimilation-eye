@@ -139,6 +139,12 @@ bool readFlash(JsonObjectConst object, FlashSettings& flash, char* error) {
          reader.number("rampUpMs", flash.rampUpMs) && reader.number("rampDownMs", flash.rampDownMs);
 }
 
+bool readBlend(JsonObjectConst object, BlendSettings& blend, char* error) {
+  Reader reader(object, "blend.", error);
+  return reader.number("cometMs", blend.cometMs) && reader.number("flashMs", blend.flashMs) &&
+         reader.number("crossfadeMs", blend.crossfadeMs) && reader.flag("randomDirection", blend.randomDirection);
+}
+
 bool readOnboard(JsonObjectConst object, OnboardSettings& onboard, char* error) {
   Reader reader(object, "onboard.", error);
   const char* mode = nullptr;
@@ -187,6 +193,12 @@ void write(const EyeConfig& config, JsonObject target) {
   flash["rampUpMs"] = config.flash.rampUpMs;
   flash["rampDownMs"] = config.flash.rampDownMs;
 
+  JsonObject blend = target["blend"].to<JsonObject>();
+  blend["cometMs"] = config.blend.cometMs;
+  blend["flashMs"] = config.blend.flashMs;
+  blend["crossfadeMs"] = config.blend.crossfadeMs;
+  blend["randomDirection"] = config.blend.randomDirection;
+
   JsonObject onboard = target["onboard"].to<JsonObject>();
   onboard["mode"] = modeName(config.onboard.mode);
   onboard["brightness"] = config.onboard.brightness;
@@ -225,6 +237,9 @@ bool read(JsonVariantConst source, EyeConfig& config, char error[ERROR_SIZE]) {
     return false;
   }
   if (!group(root, "flash", object, present, error) || (present && !readFlash(object, next.flash, error))) {
+    return false;
+  }
+  if (!group(root, "blend", object, present, error) || (present && !readBlend(object, next.blend, error))) {
     return false;
   }
   if (!group(root, "onboard", object, present, error) || (present && !readOnboard(object, next.onboard, error))) {

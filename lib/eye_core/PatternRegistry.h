@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
+#include <stdint.h>
+
+#include "BlendPattern.h"
 #include "CometPattern.h"
 #include "FlashPattern.h"
 #include "Pattern.h"
@@ -25,12 +28,16 @@ class PatternRegistry {
   // nullptr if no pattern has that name.
   Pattern* find(const char* name) const;
 
+  // Seeds every pattern that leaves something to chance.
+  void seed(uint32_t value);
+
  private:
   Pattern* _patterns[CAPACITY] = {};
   size_t _count = 0;
 
   CometPattern _comet;
   FlashPattern _flash;
+  BlendPattern _blend;
 };
 
 }  // namespace eye
