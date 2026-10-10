@@ -3,6 +3,7 @@
 #include <esp_random.h>
 #include <math.h>
 
+#include "FactoryConfig.h"
 #include "Gamma.h"
 #include "HardwareConfig.h"
 
@@ -35,7 +36,9 @@ bool AnimationTask::begin(const eye::EyeConfig& initial) {
 
   // No task yet, so the animator can be set up directly.
   if (!_animator.setConfig(initial)) {
-    _animator.setConfig(eye::defaultConfig());
+    if (!_animator.setConfig(eye::factoryConfig())) {
+      _animator.setConfig(eye::defaultConfig());
+    }
   }
   _animator.restart();
   _shared = _animator.config();

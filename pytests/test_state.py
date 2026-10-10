@@ -2,40 +2,22 @@
 import statistics
 import time
 
+from conftest import expected_defaults, led_defaults_file
+
 
 def test_state_reports_the_default_settings(device):
+    # The built-in table, with this source tree's led-defaults.json on top.
+    expected = expected_defaults()
     state = device.state()
+    for name, value in expected.items():
+        assert state[name] == value, name
 
-    assert state["running"] is True
-    assert state["pattern"] == "comet"
-    assert state["brightness"] == 60
-    assert state["comet"] == {
-        "direction": "clockwise",
-        "stepIntervalMs": 90,
-        "headBrightness": 100,
-        "tailLength": 4,
-        "tailFalloff": 50,
-    }
-    assert state["flash"] == {
-        "intervalMs": 1000,
-        "durationMs": 200,
-        "minBrightness": 0,
-        "maxBrightness": 100,
-        "rampUpMs": 0,
-        "rampDownMs": 0,
-    }
-    assert state["blend"] == {
-        "cometMs": 8000,
-        "flashMs": 6000,
-        "crossfadeMs": 1500,
-        "randomDirection": True,
-    }
-    assert state["onboard"] == {
-        "mode": "blinkOnPatternChange",
-        "brightness": 50,
-        "blinkCount": 2,
-        "blinkMs": 120,
-    }
+
+def test_system_says_whether_the_defaults_are_custom(device):
+    custom = led_defaults_file() is not None
+    assert device.json("/api/system")["firmware"]["customLedDefaults"] is custom, (
+        "the board was not built from this source tree's led-defaults.json; rebuild and upload"
+    )
 
 
 def test_state_lists_the_available_patterns(device):

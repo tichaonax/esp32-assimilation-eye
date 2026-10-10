@@ -1,5 +1,6 @@
 #include "BuildInfo.h"
 
+#include "FactoryConfig.h"
 #include "generated/build_info.h"
 
 #ifndef FIRMWARE_VERSION
@@ -22,6 +23,10 @@ bool developmentBuild() {
 #else
   return false;
 #endif
+}
+
+bool customLedDefaults() {
+  return eye::factoryConfigIsCustom();
 }
 
 }  // namespace buildinfo

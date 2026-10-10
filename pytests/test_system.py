@@ -5,6 +5,8 @@ import time
 
 import pytest
 
+from conftest import expected_defaults
+
 SLOT_BYTES = 1966080
 UPLOAD_TIMEOUT = (2, 180)
 
@@ -32,6 +34,7 @@ def test_system_reports_firmware_chip_memory_and_flash(device):
     assert re.fullmatch(r"\d+\.\d+\.\d+", info["firmware"]["version"])
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}", info["firmware"]["built"])
     assert isinstance(info["firmware"]["developmentBuild"], bool)
+    assert isinstance(info["firmware"]["customLedDefaults"], bool)
 
     assert info["chip"]["model"].startswith("ESP32")
     assert info["chip"]["cores"] == 2
@@ -273,7 +276,8 @@ def test_factory_reset_restores_every_default(device):
     assert session["username"] == "admin" and session["defaultPassword"] is True
 
     state = fresh.state()
-    assert state["brightness"] == 60 and state["pattern"] == "comet", "LED settings must be back to defaults"
+    for name, value in expected_defaults().items():
+        assert state[name] == value, f"{name} must be back to its default"
 
     wifi = fresh.json("/api/wifi")
     assert wifi["accessPoint"]["ssid"] == "AssimilationEye"

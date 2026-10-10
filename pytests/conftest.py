@@ -26,6 +26,7 @@ restoring the defaults; signs in and out many times; triggers the 30-second
 sign-in lockout once; changes the sign-in details and changes them back;
 searches for Wi-Fi networks; and restarts the board once.
 """
+import copy
 import json
 import os
 import time
@@ -275,6 +276,65 @@ def default_settings(device):
     device.reset()
     yield
     device.reset()
+
+
+# The built-in defaults in lib/eye_core/EyeConfig.cpp.
+BUILT_IN_DEFAULTS = {
+    "running": True,
+    "pattern": "comet",
+    "brightness": 60,
+    "comet": {
+        "direction": "clockwise",
+        "stepIntervalMs": 90,
+        "headBrightness": 100,
+        "tailLength": 4,
+        "tailFalloff": 50,
+    },
+    "flash": {
+        "intervalMs": 1000,
+        "durationMs": 200,
+        "minBrightness": 0,
+        "maxBrightness": 100,
+        "rampUpMs": 0,
+        "rampDownMs": 0,
+    },
+    "blend": {
+        "cometMs": 8000,
+        "flashMs": 6000,
+        "crossfadeMs": 1500,
+        "randomDirection": True,
+    },
+    "onboard": {
+        "mode": "blinkOnPatternChange",
+        "brightness": 50,
+        "blinkCount": 2,
+        "blinkMs": 120,
+    },
+}
+
+
+def expected_defaults():
+    """What a reset should give: the built-in table with this source tree's led-defaults.json on top.
+
+    The board must have been built from this tree, as it must for every other test here.
+    """
+    expected = copy.deepcopy(BUILT_IN_DEFAULTS)
+    custom = led_defaults_file()
+    for key, value in (custom or {}).items():
+        if isinstance(value, dict):
+            expected[key].update(value)
+        else:
+            expected[key] = value
+    return expected
+
+
+def led_defaults_file():
+    """The parsed led-defaults.json, or None if the source tree has none."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "led-defaults.json")
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8-sig") as handle:
+        return json.load(handle)
 
 
 @pytest.fixture

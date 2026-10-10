@@ -10,4 +10,5 @@ void runBlendTests();
 void runAnimatorTests();
 void runOnboardTests();
 void runJsonTests();
+void runFactoryTests();
 void runRulesTests();

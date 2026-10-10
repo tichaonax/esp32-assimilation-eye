@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "FactoryConfig.h"
 #include "WebApiInternal.h"
 #include "generated/ui_bundle.h"
 
@@ -195,7 +196,7 @@ void WebApi::addLedRoutes() {
   });
 
   route("/api/reset", HTTP_POST, Access::SignedIn, [this](AsyncWebServerRequest* request) {
-    updateConfig(eye::defaultConfig());
+    updateConfig(eye::factoryConfig());
     sendState(request);
   });
 }
@@ -299,7 +300,7 @@ void WebApi::handleSocketText(AsyncWebSocketClient* client, const uint8_t* data,
     return;
   }
   if (strcmp(type, "reset") == 0) {
-    updateConfig(eye::defaultConfig());
+    updateConfig(eye::factoryConfig());
     return;
   }
   if (strcmp(type, "get") == 0) {

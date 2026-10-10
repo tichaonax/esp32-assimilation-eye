@@ -89,6 +89,8 @@ constexpr int32_t ONBOARD_BLINK_MS_MAX = 500;
 
 constexpr char DEFAULT_PATTERN[] = "comet";
 
+// The built-in defaults. What a reset returns to is factoryConfig() in
+// FactoryConfig.h, which lays this build's led-defaults.json on top.
 EyeConfig defaultConfig();
 
 // Brings every value into range. Returns true if anything had to change.

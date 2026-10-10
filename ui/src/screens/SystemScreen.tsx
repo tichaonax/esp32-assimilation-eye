@@ -60,6 +60,7 @@ function AboutCard({ info }: { info: SystemInfo }) {
         items={[
           { label: 'Firmware', value: info.firmware.version },
           { label: 'Built', value: info.firmware.built },
+          { label: 'LED defaults', value: info.firmware.customLedDefaults ? 'Set for this build' : 'Built-in' },
           { label: 'Running for', value: uptime(info.uptimeS) },
           { label: 'Last start', value: info.resetReason },
           { label: 'Chip', value: `${info.chip.model} rev ${info.chip.revision}` },

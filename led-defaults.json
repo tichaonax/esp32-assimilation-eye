@@ -1,0 +1,32 @@
+{
+  "running": true,
+  "pattern": "flash",
+  "brightness": 84,
+  "comet": {
+    "direction": "clockwise",
+    "stepIntervalMs": 75,
+    "headBrightness": 94,
+    "tailLength": 5,
+    "tailFalloff": 40
+  },
+  "flash": {
+    "intervalMs": 2400,
+    "durationMs": 430,
+    "minBrightness": 0,
+    "maxBrightness": 100,
+    "rampUpMs": 1070,
+    "rampDownMs": 900
+  },
+  "blend": {
+    "cometMs": 8000,
+    "flashMs": 6000,
+    "crossfadeMs": 1500,
+    "randomDirection": true
+  },
+  "onboard": {
+    "mode": "heartbeat",
+    "brightness": 88,
+    "blinkCount": 3,
+    "blinkMs": 90
+  }
+}

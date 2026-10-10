@@ -12,6 +12,7 @@
 #include "Auth.h"
 #include "BuildInfo.h"
 #include "ConfigStore.h"
+#include "FactoryConfig.h"
 #include "FactoryReset.h"
 #include "HardwareConfig.h"
 #include "LedDriver.h"
@@ -114,9 +115,11 @@ void setup() {
   selftest::run(leds);
   Serial.println(F("Self-test done."));
 
-  eye::EyeConfig config = eye::defaultConfig();
+  eye::EyeConfig config = eye::factoryConfig();
   const bool restored = store.load(config);
   Serial.printf("Settings: %s\n", restored ? "restored from flash" : "using defaults (nothing usable saved)");
+  Serial.printf("LED defaults: %s\n",
+                buildinfo::customLedDefaults() ? "from this build's led-defaults.json" : "built-in");
 
   const bool animationOk = animation.begin(config);
   Serial.printf("Animation: %u patterns, %u ms tick, pattern \"%s\" — %s\n",

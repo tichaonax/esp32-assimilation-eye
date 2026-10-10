@@ -36,14 +36,15 @@ def test_change_made_over_http_is_pushed_to_the_socket(device):
         assert socket.receive_state()["brightness"] == 77
 
 
-def test_combined_pattern_is_set_and_clamped_over_the_socket(device):
+def test_combined_pattern_is_set_and_clamped_over_the_socket(device, defaults):
     with device.socket() as socket:
         socket.receive_state()
         values = {"pattern": "blend", "blend": {"cometMs": 5, "crossfadeMs": 99999, "randomDirection": False}}
         socket.send({"type": "set", "values": values})
         state = socket.receive_state()
         assert state["pattern"] == "blend"
-        assert state["blend"] == {"cometMs": 1000, "flashMs": 6000, "crossfadeMs": 5000, "randomDirection": False}
+        flash_ms = defaults["blend"]["flashMs"]
+        assert state["blend"] == {"cometMs": 1000, "flashMs": flash_ms, "crossfadeMs": 5000, "randomDirection": False}
 
 
 def test_values_are_clamped_like_the_http_route(device):

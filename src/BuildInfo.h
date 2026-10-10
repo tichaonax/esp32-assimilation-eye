@@ -13,4 +13,8 @@ const char* builtAt();
 // Wi-Fi name and password into it. Such a build must not be handed out.
 bool developmentBuild();
 
+// True if the firmware was built with a led-defaults.json, so a reset returns
+// to those LED settings and not to the built-in ones.
+bool customLedDefaults();
+
 }  // namespace buildinfo

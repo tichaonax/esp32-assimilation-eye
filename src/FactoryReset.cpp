@@ -1,6 +1,6 @@
 #include "FactoryReset.h"
 
-#include "EyeConfig.h"
+#include "FactoryConfig.h"
 #include "HardwareConfig.h"
 #include "SystemControl.h"
 
@@ -27,7 +27,7 @@ void FactoryReset::perform() {
   Serial.println(F("[reset] FACTORY RESET: default sign-in, no saved network, default access point, default LEDs."));
   _auth.factoryReset();
   _wifi.eraseSaved();
-  _animation.apply(eye::defaultConfig());
+  _animation.apply(eye::factoryConfig());
   _store.saveNow();
   _animation.setIndicator(AnimationTask::Indicator::ResetConfirmed);
   systemcontrol::scheduleRestart(RESTART_DELAY_MS);

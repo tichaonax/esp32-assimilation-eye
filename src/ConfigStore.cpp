@@ -4,6 +4,7 @@
 #include <Preferences.h>
 
 #include "ConfigJson.h"
+#include "FactoryConfig.h"
 
 namespace {
 constexpr char NVS_NAMESPACE[] = "eye";
@@ -32,7 +33,7 @@ bool ConfigStore::load(eye::EyeConfig& config) {
     return false;
   }
   // Start from the defaults so a setting added in later firmware has a value.
-  eye::EyeConfig loaded = eye::defaultConfig();
+  eye::EyeConfig loaded = eye::factoryConfig();
   char error[eye::json::ERROR_SIZE];
   if (!eye::json::read(doc.as<JsonVariantConst>(), loaded, error)) {
     Serial.printf("[store] Saved settings are not usable (%s); ignoring them.\n", error);

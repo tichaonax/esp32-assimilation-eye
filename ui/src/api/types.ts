@@ -158,7 +158,7 @@ export interface JoinRequest extends Partial<StaticAddress> {
 // ---- System -------------------------------------------------------------------
 
 export interface SystemInfo {
-  firmware: { version: string; built: string; developmentBuild: boolean };
+  firmware: { version: string; built: string; developmentBuild: boolean; customLedDefaults: boolean };
   chip: { model: string; revision: string; cores: number; mac: string };
   uptimeS: number;
   resetReason: string;

@@ -35,6 +35,7 @@ void WebApi::addSystemRoutes() {
     firmware["version"] = buildinfo::version();
     firmware["built"] = buildinfo::builtAt();
     firmware["developmentBuild"] = buildinfo::developmentBuild();
+    firmware["customLedDefaults"] = buildinfo::customLedDefaults();
 
     JsonObject chip = doc["chip"].to<JsonObject>();
     chip["model"] = ESP.getChipModel();
