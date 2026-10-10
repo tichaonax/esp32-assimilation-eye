@@ -1,110 +1,71 @@
 // Assimilation Eye — firmware entry point.
 //
-// Phase 3: brings up the LED ring, runs the power-on self-test and starts the
-// animation with the compiled-in default settings. While BRINGUP_PROBE is
-// defined, the BOOT button (or the letter n on the serial console) steps
-// through a set of demonstration settings, since there is no interface yet.
+// Phase 4: LED ring and onboard LED, power-on self-test, animation with the
+// saved settings, the prop's own Wi-Fi access point and the settings API.
+// While BRINGUP_PROBE is defined, the BOOT button (or the letter n on the
+// serial console) switches pattern, since there is no interface yet.
 
 #include <Arduino.h>
 
 #include "AnimationTask.h"
+#include "ConfigStore.h"
 #include "HardwareConfig.h"
 #include "LedDriver.h"
+#include "OnboardLed.h"
 #include "SelfTest.h"
+#include "WebApi.h"
+#include "WifiManager.h"
 
 #ifndef FIRMWARE_VERSION
 #define FIRMWARE_VERSION "dev"
 #endif
 
 static LedDriver leds;
-static AnimationTask animation(leds);
+static OnboardLed onboardLed;
+static AnimationTask animation(leds, onboardLed);
+static ConfigStore store(animation);
+static WifiManager wifi;
+static WebApi api(animation, store, onboardLed);
 
 #ifdef BRINGUP_PROBE
 namespace probe {
 
-struct Step {
-  const char* description;
-  void (*edit)(eye::EyeConfig&);
-};
-
-void usePattern(eye::EyeConfig& c, const char* name) {
-  strncpy(c.pattern, name, eye::PATTERN_NAME_SIZE - 1);
-  c.pattern[eye::PATTERN_NAME_SIZE - 1] = '\0';
-}
-
-// Each step starts from the default settings and changes what it names.
-const Step STEPS[] = {
-    {"comet, clockwise, default settings", [](eye::EyeConfig&) {}},
-    {"comet, counter-clockwise", [](eye::EyeConfig& c) { c.comet.direction = eye::Direction::CounterClockwise; }},
-    {"comet, slow (400 ms per LED), tail of 2",
-     [](eye::EyeConfig& c) {
-       c.comet.stepIntervalMs = 400;
-       c.comet.tailLength = 2;
-     }},
-    {"flash, abrupt, default settings", [](eye::EyeConfig& c) { usePattern(c, "flash"); }},
-    {"flash, ramp up 300 ms, hold 100 ms, ramp down 500 ms",
-     [](eye::EyeConfig& c) {
-       usePattern(c, "flash");
-       c.flash.rampUpMs = 300;
-       c.flash.durationMs = 100;
-       c.flash.rampDownMs = 500;
-     }},
-    {"flash, slow pulse between 10% and 100% over 2 seconds",
-     [](eye::EyeConfig& c) {
-       usePattern(c, "flash");
-       c.flash.intervalMs = 2000;
-       c.flash.minBrightness = 10;
-       c.flash.rampUpMs = 1000;
-       c.flash.durationMs = 0;
-       c.flash.rampDownMs = 1000;
-     }},
-};
-constexpr size_t STEP_COUNT = sizeof(STEPS) / sizeof(STEPS[0]);
-
 constexpr uint32_t DEBOUNCE_MS = 40;
-constexpr uint32_t ONBOARD_BLINK_MS = 150;
-constexpr uint32_t REPORT_MS = 5000;
+constexpr uint32_t REPORT_MS = 30000;
 
-size_t current = 0;
 bool buttonStable = false;
 bool buttonLast = false;
 uint32_t buttonChangedMs = 0;
-uint32_t onboardOffAtMs = 0;
 uint32_t lastReportMs = 0;
 uint32_t lastReportFrames = 0;
-
-void setOnboard(bool on) {
-  if (!hw::ONBOARD_LED_PRESENT) {
-    return;
-  }
-  digitalWrite(hw::ONBOARD_LED_PIN, on == hw::ONBOARD_LED_ACTIVE_HIGH ? HIGH : LOW);
-}
 
 bool buttonPressed() {
   const bool low = digitalRead(hw::BOOT_BUTTON_PIN) == LOW;
   return hw::BOOT_BUTTON_ACTIVE_LOW ? low : !low;
 }
 
-void show(size_t index) {
-  current = index % STEP_COUNT;
-  eye::EyeConfig config = eye::defaultConfig();
-  STEPS[current].edit(config);
-  const bool ok = animation.apply(config);
-  Serial.printf("[demo] %u of %u: %s%s\n", static_cast<unsigned>(current + 1), static_cast<unsigned>(STEP_COUNT),
-                STEPS[current].description, ok ? "" : " — REJECTED");
-  setOnboard(true);
-  onboardOffAtMs = millis() + ONBOARD_BLINK_MS;
+// Moves to the next registered pattern, through the same path the API uses.
+void nextPattern() {
+  const eye::PatternRegistry& registry = animation.patterns();
+  eye::EyeConfig config = animation.config();
+  size_t index = 0;
+  for (size_t i = 0; i < registry.count(); i++) {
+    if (strcmp(registry.at(i)->name(), config.pattern) == 0) {
+      index = i;
+      break;
+    }
+  }
+  const eye::Pattern* next = registry.at((index + 1) % registry.count());
+  strncpy(config.pattern, next->name(), eye::PATTERN_NAME_SIZE - 1);
+  config.pattern[eye::PATTERN_NAME_SIZE - 1] = '\0';
+  config.running = true;
+  api.updateConfig(config);
+  Serial.printf("[probe] Pattern: %s\n", next->label());
 }
 
 void begin() {
-  if (hw::ONBOARD_LED_PRESENT) {
-    pinMode(hw::ONBOARD_LED_PIN, OUTPUT);
-    setOnboard(false);
-  }
   pinMode(hw::BOOT_BUTTON_PIN, INPUT_PULLUP);
-  Serial.println(F("[demo] Press the BOOT button, or send n, for the next demonstration."));
-  Serial.println(F("[demo] The onboard LED blinks once on each change."));
-  show(0);
+  Serial.println(F("[probe] Press the BOOT button, or send n, to switch pattern."));
   lastReportMs = millis();
   lastReportFrames = animation.frameCount();
 }
@@ -119,27 +80,22 @@ void loop() {
   } else if (raw != buttonStable && now - buttonChangedMs >= DEBOUNCE_MS) {
     buttonStable = raw;
     if (buttonStable) {
-      Serial.println(F("[demo] BOOT button pressed"));
-      show(current + 1);
+      nextPattern();
     }
   }
 
   while (Serial.available() > 0) {
     const int c = Serial.read();
     if (c == 'n' || c == 'N') {
-      show(current + 1);
+      nextPattern();
     }
-  }
-
-  if (onboardOffAtMs != 0 && static_cast<int32_t>(now - onboardOffAtMs) >= 0) {
-    setOnboard(false);
-    onboardOffAtMs = 0;
   }
 
   if (now - lastReportMs >= REPORT_MS) {
     const uint32_t frames = animation.frameCount();
-    Serial.printf("[demo] animation: %.1f frames per second\n",
-                  (frames - lastReportFrames) * 1000.0f / static_cast<float>(now - lastReportMs));
+    Serial.printf("[probe] animation %.1f frames per second, free memory %u bytes\n",
+                  (frames - lastReportFrames) * 1000.0f / static_cast<float>(now - lastReportMs),
+                  static_cast<unsigned>(ESP.getFreeHeap()));
     lastReportMs = now;
     lastReportFrames = frames;
   }
@@ -165,14 +121,25 @@ void setup() {
   Serial.printf("LED ring: %u outputs at %u Hz, %u-bit — %s\n", static_cast<unsigned>(hw::RING_LED_COUNT),
                 static_cast<unsigned>(hw::PWM_FREQUENCY_HZ), hw::PWM_RESOLUTION_BITS,
                 ringOk ? "ready" : "FAILED to attach one or more pins");
+  const bool onboardOk = onboardLed.begin();
+  Serial.printf("Onboard LED: %s\n",
+                !hw::ONBOARD_LED_PRESENT ? "not fitted on this board" : onboardOk ? "ready" : "FAILED to attach");
 
   Serial.println(F("Self-test: LED 1 -> LED 8, then fade."));
   selftest::run(leds);
   Serial.println(F("Self-test done."));
 
-  const bool animationOk = animation.begin();
-  Serial.printf("Animation: %u patterns, %u ms tick — %s\n", static_cast<unsigned>(animation.patterns().count()),
-                static_cast<unsigned>(AnimationTask::TICK_MS), animationOk ? "running" : "FAILED to start");
+  eye::EyeConfig config = eye::defaultConfig();
+  const bool restored = store.load(config);
+  Serial.printf("Settings: %s\n", restored ? "restored from flash" : "using defaults (nothing usable saved)");
+
+  const bool animationOk = animation.begin(config);
+  Serial.printf("Animation: %u patterns, %u ms tick, pattern \"%s\" — %s\n",
+                static_cast<unsigned>(animation.patterns().count()), static_cast<unsigned>(AnimationTask::TICK_MS),
+                animation.config().pattern, animationOk ? "running" : "FAILED to start");
+
+  wifi.begin();
+  api.begin();
 
 #ifdef BRINGUP_PROBE
   probe::begin();
@@ -180,10 +147,11 @@ void setup() {
 }
 
 void loop() {
+  wifi.loop();
+  api.loop();
+  store.loop();
 #ifdef BRINGUP_PROBE
   probe::loop();
-  delay(5);
-#else
-  delay(1000);
 #endif
+  delay(5);
 }

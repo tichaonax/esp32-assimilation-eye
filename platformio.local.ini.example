@@ -1,0 +1,15 @@
+; Optional development Wi-Fi.
+;
+; Copy this file to platformio.local.ini (which git ignores) and fill in your
+; own network. The firmware then joins that network as well as running its own
+; access point, so this PC can reach the board without leaving its Wi-Fi. The
+; board prints its address on the serial console once it has joined.
+;
+; Use a 2.4 GHz network: the ESP32 cannot see 5 GHz.
+;
+; Do not hand out a firmware.bin built this way: the network name and password
+; are compiled into it. Delete platformio.local.ini and rebuild first.
+
+[dev_wifi]
+ssid = your-network-name
+password = your-network-password

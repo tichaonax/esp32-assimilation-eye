@@ -10,9 +10,10 @@ constexpr UBaseType_t PRIORITY = 2;  // above loop() (1), below the Wi-Fi stack
 constexpr BaseType_t CORE = 1;       // the Wi-Fi stack lives on core 0
 }  // namespace
 
-AnimationTask::AnimationTask(LedDriver& leds) : _leds(leds), _animator(_registry), _shared(eye::defaultConfig()) {}
+AnimationTask::AnimationTask(LedDriver& leds, OnboardLed& onboard)
+    : _leds(leds), _onboard(onboard), _animator(_registry), _shared(eye::defaultConfig()) {}
 
-bool AnimationTask::begin() {
+bool AnimationTask::begin(const eye::EyeConfig& initial) {
   if (_task != nullptr) {
     return true;
   }
@@ -20,6 +21,13 @@ bool AnimationTask::begin() {
   if (_mutex == nullptr) {
     return false;
   }
+  // No task yet, so the animator can be set up directly.
+  if (!_animator.setConfig(initial)) {
+    _animator.setConfig(eye::defaultConfig());
+  }
+  _animator.restart();
+  _shared = _animator.config();
+
   return xTaskCreatePinnedToCore(taskEntry, "animation", STACK_BYTES, this, PRIORITY, &_task, CORE) == pdPASS;
 }
 
@@ -79,6 +87,7 @@ void AnimationTask::run() {
     for (size_t i = 0; i < eye::LED_COUNT; i++) {
       _leds.set(i, frame[i]);
     }
+    _onboard.set(_animator.onboardLevel());
     _frames = _frames + 1;
   }
 }

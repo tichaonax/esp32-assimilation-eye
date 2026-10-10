@@ -7,3 +7,5 @@ void runGammaTests();
 void runCometTests();
 void runFlashTests();
 void runAnimatorTests();
+void runOnboardTests();
+void runJsonTests();

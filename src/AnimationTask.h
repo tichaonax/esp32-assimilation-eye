@@ -1,7 +1,7 @@
 // Runs the LED animation in its own FreeRTOS task on a fixed tick, so nothing
 // else the firmware does (web requests, saving settings) can stall it.
 //
-// config() and apply() are safe to call from any task.
+// config() and apply() are safe to call from any task once begin() has run.
 #pragma once
 
 #include <Arduino.h>
@@ -9,16 +9,19 @@
 #include "Animator.h"
 #include "EyeConfig.h"
 #include "LedDriver.h"
+#include "OnboardLed.h"
 #include "PatternRegistry.h"
 
 class AnimationTask {
  public:
   static constexpr uint32_t TICK_MS = 5;  // 200 frames per second
 
-  explicit AnimationTask(LedDriver& leds);
+  AnimationTask(LedDriver& leds, OnboardLed& onboard);
 
-  // Starts the task with the default settings. Call once, after LedDriver::begin().
-  bool begin();
+  // Starts the task with the given settings (sanitized first; the defaults are
+  // used if the pattern name is not registered). Call once, after the LED
+  // outputs have been set up.
+  bool begin(const eye::EyeConfig& initial);
 
   // A copy of the settings in force.
   eye::EyeConfig config() const;
@@ -38,6 +41,7 @@ class AnimationTask {
   void run();
 
   LedDriver& _leds;
+  OnboardLed& _onboard;
   eye::PatternRegistry _registry;
   eye::Animator _animator;  // touched only by the animation task after begin()
 

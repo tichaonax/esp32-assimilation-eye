@@ -17,12 +17,23 @@ bool Animator::setConfig(const EyeConfig& config) {
   if (pattern != _active) {
     pattern->reset();
     _active = pattern;
+    _onboard.notifyPatternChange();
   }
   _config = candidate;
   return true;
 }
 
+void Animator::restart() {
+  if (_active != nullptr) {
+    _active->reset();
+  }
+  _onboard.reset();
+  _onboardLevel = 0.0f;
+}
+
 void Animator::render(uint32_t elapsedMs, float out[LED_COUNT]) {
+  _onboardLevel = gamma::correct(_onboard.update(_config.onboard, elapsedMs));
+
   if (!_config.running || _active == nullptr) {
     for (size_t i = 0; i < LED_COUNT; i++) {
       out[i] = 0.0f;

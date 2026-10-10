@@ -20,6 +20,8 @@ static int runAllTests() {
   runCometTests();
   runFlashTests();
   runAnimatorTests();
+  runOnboardTests();
+  runJsonTests();
   return UNITY_END();
 }
 
